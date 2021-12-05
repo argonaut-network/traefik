@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+  traefik:
+    image: djpic/traefik:latest
+    container_name: traefik
+    restart: always
+#    command:
+#      # specify dynamic configuration file:
+#      - "--providers.file.directory=/etc/traefik"
+#      - "--providers.file.filename=dynamic_conf.yml"
+#      - "--providers.file.watch=true"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/traefik.yml:/traefik.yml:ro
+      - ./data/acme.json:/acme.json
+      - ./data/dynamic_conf:/etc/traefik/dynamic_conf
+      - ./data/logs:/var/log/traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.argonaut.network`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=Sabinno:$$apr1$$lwg9sq5d$$yuIFTAfPAl7yp6z9rWXxm0"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.argonaut.network`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=http"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+      - "com.centurylinklabs.watchtower.enable=true"
+
+#  traefik-certs-dumper:
+#    image: ldez/traefik-certs-dumper:v2.7.4
+#    entrypoint: sh -c '
+#      apk add jq
+#      ; while ! [ -e /data/acme.json ]
+#      || ! [ `jq ".[] | .Certificates | length" /data/acme.json` != 0 ]; do
+#      sleep 1
+#      ; done
+#      && traefik-certs-dumper file --version v2 --watch
+#      --source /data/acme.json --dest /data/certs'
+#    volumes:
+#      - ./data:/data
+
+networks:
+  proxy:
+    external: true
