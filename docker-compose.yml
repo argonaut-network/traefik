@@ -26,13 +26,13 @@ services:
 
       # Universal https upgrade (use in case cli args fail to work)
       #- traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)
-      #- traefik.http.routers.http-catchall.entrypoints=web
+      #- traefik.http.routers.http-catchall.entrypoints=http
       #- traefik.http.routers.http-catchall.middlewares=https-upgrade@docker
       #- traefik.http.middlewares.https-upgrade.redirectscheme.scheme=https
       #- traefik.http.middlewares.https-upgrade.redirectscheme.permanent=true
 
       # Init dashboard
-      - traefik.http.routers.traefik-secure.entrypoints=websecure
+      - traefik.http.routers.traefik-secure.entrypoints=https
       - traefik.http.routers.traefik-secure.rule=Host(`${TRAEFIK_DASHBOARD_URL}`)
       - traefik.http.routers.traefik-secure.service=api@internal
 
@@ -58,17 +58,17 @@ services:
       - --providers.docker.exposedbydefault=false
       
       # Define insecure entrypoint and immediately upgrade to secure
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.http.address=:80
+      - --entrypoints.http.http.redirections.entrypoint.to=https
+      - --entrypoints.http.http.redirections.entrypoint.scheme=https
+      - --entrypoints.http.http.redirections.entrypoint.permanent=true
       
       # Define secure entrypoint with wildcart cert
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.websecure.http.tls=true
-      - --entrypoints.websecure.http.tls.certResolver=cloudflare
-      - --entrypoints.websecure.http.tls.domains[0].main=${PRIMARY_DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.${PRIMARY_DOMAIN}
+      - --entrypoints.https.address=:443
+      - --entrypoints.https.http.tls=true
+      - --entrypoints.https.http.tls.certResolver=cloudflare
+      - --entrypoints.https.http.tls.domains[0].main=${PRIMARY_DOMAIN}
+      - --entrypoints.https.http.tls.domains[0].sans=*.${PRIMARY_DOMAIN}
       
       # Define Cloudflare DNS challenge as primary resolver
       - --certificatesresolvers.cloudflare.acme.email=${LETSENCRYPT_EMAIL}
